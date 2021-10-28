@@ -30,6 +30,12 @@ class RemoteConnection:
         payload = b'\x10\x02'+msg+ crc_hex.upper().encode('utf8')+b'\x10\x03'
         self.out_socket.sendto(payload, self.remote_address)
 
+    def getStatus(self):
+        self.send(b'<RemoteControl ProtocolVersion="1.5"><Get><Job/></Get></RemoteControl>')
+
+    def enableRemote(self):
+        self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job RemoteControlEnabled="true"/></Set></RemoteControl>')
+
     def spinOnce(self):
         try:
             data = self.in_socket.recv(4096)
@@ -40,8 +46,33 @@ class RemoteConnection:
         except socket.timeout:
             pass
 
+class ProgrammableAcousticNavigation:
+    def __init__(self, inport, outport, remote_host, local_address=''):
+        
+        self.in_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.in_socket.bind((local_address, inport))
+        self.in_socket.settimeout(0.1)
+
+        self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.remote_address = (remote_host, outport)
+
+    def send(self, msg):
+        self.out_socket.sendto(msg, self.remote_address)
+
+    def spinOnce(self):
+        try:
+            data = self.in_socket.recv(4096)
+            print(data)
+        except socket.timeout:
+            pass
+
+
 if __name__ == '__main__':
-    rc = RemoteConnection(50001, 50000, 'survey_pc')
-    rc.send(b'<RemoteControl ProtocolVersion="1.5"><Get><Job /></Get></RemoteControl>')
+    # rc = RemoteConnection(50001, 50000, 'survey_pc')
+    # rc.getStatus()
+    # while True:
+    #     rc.spinOnce()
+    pan = ProgrammableAcousticNavigation(50011, 50010, 'survey_pc')
+    pan.send(b"SMS:2001;B0|Hello world!\n")
     while True:
-        rc.spinOnce()
+        pan.spinOnce()
