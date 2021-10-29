@@ -33,18 +33,28 @@ class RemoteConnection:
     def getStatus(self):
         self.send(b'<RemoteControl ProtocolVersion="1.5"><Get><Job/></Get></RemoteControl>')
 
-    def enableRemote(self):
-        self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job RemoteControlEnabled="true"/></Set></RemoteControl>')
+    def enableRemote(self, enable=True):
+        if enable:
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job RemoteControlEnabled="true"/></Set></RemoteControl>')
+        else:
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job RemoteControlEnabled="false"/></Set></RemoteControl>')
 
-    def spinOnce(self):
+    def enableAsync(self, enable=True):
+        if enable:
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="True" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="True" AsyncAlarmOutputEnabled="True" AsyncEventOutputEnabled="False" AsyncOutputInterval="5"></Job></Set></RemoteControl>')
+        else:
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="False" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="False" AsyncAlarmOutputEnabled="False" AsyncEventOutputEnabled="False" AsyncOutputInterval="5"></Job></Set></RemoteControl>')
+    def getData(self):
         try:
             data = self.in_socket.recv(4096)
             if len(data) > 12:
                 payload = data[2:-10]
-                root = ET.fromstring(payload)
-                printXMLNode(root)
+                return payload
+                #root = ET.fromstring(payload)
+                #return root
         except socket.timeout:
             pass
+        return None
 
 class ProgrammableAcousticNavigation:
     def __init__(self, inport, outport, remote_host, local_address=''):
@@ -59,20 +69,30 @@ class ProgrammableAcousticNavigation:
     def send(self, msg):
         self.out_socket.sendto(msg, self.remote_address)
 
-    def spinOnce(self):
+    def getData(self):
         try:
-            data = self.in_socket.recv(4096)
-            print(data)
+            return self.in_socket.recv(4096)
         except socket.timeout:
             pass
+        return None
 
 
 if __name__ == '__main__':
-    # rc = RemoteConnection(50001, 50000, 'survey_pc')
-    # rc.getStatus()
+    rc = RemoteConnection(50001, 50000, 'survey_pc')
+    #rc.send(b'<RemoteControl ProtocolVersion="1.0"><Set><Job><Objects><Object Type="PitchRoll" UID="sjgWjF8QqhA="><Properties Port="COM21"/></Object></Objects></Job></Set></RemoteControl>')
+    rc.getStatus()
+    rc.enableRemote()
+    #rc.spinOnce()
+    rc.enableAsync(True)
     # while True:
     #     rc.spinOnce()
     pan = ProgrammableAcousticNavigation(50011, 50010, 'survey_pc')
     pan.send(b"SMS:2001;B0|Hello world!\n")
     while True:
-        pan.spinOnce()
+        data = rc.getData()
+        if data is not None:
+            root = ET.fromstring(data)
+            printXMLNode(root)
+        data = pan.getData()
+        if data is not None:
+            print('from pan:', data)
