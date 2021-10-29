@@ -47,6 +47,7 @@ class Modem:
     self.connection = connection
 
   def send(self, data):
+    print('sending:',data)
     self.connection.send(data)
 
   def recv(self):
