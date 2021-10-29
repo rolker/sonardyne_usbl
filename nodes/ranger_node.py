@@ -4,6 +4,7 @@ import rospy
 
 from std_msgs.msg import String
 from sensor_msgs.msg import NavSatFix
+from sonardyne_msgs.msg import SMS
 
 import xml.etree.ElementTree as ET
 import datetime
@@ -13,16 +14,15 @@ import sonardyne_usbl.ranger2
 
 position_pubs = {}
 
+
+
 def processRemoteControl(data):
     root = ET.fromstring(data)
     for element in root:
-        print (element)
         if element.tag == 'AsynchStatus':
             for sube in element:
                 if sube.tag == 'GeographicPositions':
                     for gp in sube:
-                        print ('gp', gp)
-                        print (gp.attrib)
                         nsf = NavSatFix()
                         nsf.altitude = -float(gp.attrib['Depth'])
                         nsf.latitude = float(gp.attrib['Latitude'])
@@ -52,7 +52,11 @@ def timerCallback(event):
     data = pan.getData()
     if data is not None:
         #print('from pan:', data)
-        raw_pan_pub.publish(String(data))
+        raw_pan_pub.publish(String(data.decode('utf8')))
+
+def sendSMSCallback(msg):
+    msg_str = "SMS:"+msg.address+"|"+msg.message+"\n"
+    pan.send(msg_str.encode('utf8'))
 
 if __name__ == '__main__':
     rospy.init_node('sonardyne_ranger')
@@ -70,9 +74,12 @@ if __name__ == '__main__':
     rc.enableRemote()
     rc.enableAsync(True)
 
-    raw_control_pub = rospy.Publisher('raw_control', String, queue_size=10)
-    raw_pan_pub = rospy.Publisher('raw_pan', String, queue_size=10)
+    raw_control_pub = rospy.Publisher('~raw_control', String, queue_size=10)
+    raw_pan_pub = rospy.Publisher('~raw_pan', String, queue_size=10)
 
+    received_sms_pub = rospy.Publisher('~received_sms', SMS, queue_size=10)
+
+    send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
     rospy.spin()
