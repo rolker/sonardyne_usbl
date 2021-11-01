@@ -3,7 +3,7 @@
 import rospy
 
 from std_msgs.msg import String
-from sensor_msgs.msg import NavSatFix
+from geographic_msgs.msg import GeoPointStamped
 from sonardyne_msgs.msg import SMS
 
 import xml.etree.ElementTree as ET
@@ -23,10 +23,10 @@ def processRemoteControl(data):
             for sube in element:
                 if sube.tag == 'GeographicPositions':
                     for gp in sube:
-                        nsf = NavSatFix()
-                        nsf.altitude = -float(gp.attrib['Depth'])
-                        nsf.latitude = float(gp.attrib['Latitude'])
-                        nsf.longitude = float(gp.attrib['Longitude'])
+                        geoPoint = GeoPointStamped()
+                        geoPoint.position.altitude = -float(gp.attrib['Depth'])
+                        geoPoint.position.latitude = float(gp.attrib['Latitude'])
+                        geoPoint.position.longitude = float(gp.attrib['Longitude'])
                         name = gp.attrib['Name']
                         validTime = gp.attrib['TimeOfValidity']
                         timeParts = validTime.split(':')
@@ -37,11 +37,11 @@ def processRemoteControl(data):
                         dt = datetime.datetime.utcfromtimestamp(ts.to_sec())
                         dt = datetime.datetime(dt.year, dt.month, dt.day, int(timeParts[0]), int(timeParts[1]), secs_int, usec)
 
-                        nsf.header.stamp = rospy.Time.from_sec(dt.timestamp())
+                        geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
                         
                         if not name in position_pubs:
-                            position_pubs[name] = rospy.Publisher("~positions/"+name, NavSatFix, queue_size=1)
-                        position_pubs[name].publish(nsf)
+                            position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
+                        position_pubs[name].publish(geoPoint)
  
 def timerCallback(event):
     data = rc.getData()
