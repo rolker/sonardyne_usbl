@@ -20,6 +20,8 @@ class RemoteConnection:
         self.out_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.remote_address = (remote_host, outport)
 
+        self.beacon_uids = {}
+
     def send(self, msg):
         crc = binascii.crc32(msg)
         crc_packed = struct.pack('>I', crc)
@@ -32,6 +34,17 @@ class RemoteConnection:
 
     def getStatus(self):
         self.send(b'<RemoteControl ProtocolVersion="1.5"><Get><Job/></Get></RemoteControl>')
+
+    def getLinkStatus(self, name):
+        if name in self.beacon_uids:
+            cmd = '<RemoteControl ProtocolVersion="1.5"><DeviceAction><Job><Objects><Object Type="Beacon" UID="'+self.beacon_uids[name]+'"><Action ActionType="LINK STATUS" /></Object></Objects></Job></DeviceAction></RemoteControl>'
+            self.send(cmd.encode('utf8'))
+
+    def getAllLinkStatus(self):
+        for name in self.beacon_uids:
+            self.getLinkStatus(name)
+
+
 
     def enableRemote(self, enable=True):
         if enable:
@@ -49,6 +62,13 @@ class RemoteConnection:
             data = self.in_socket.recv(4096)
             if len(data) > 12:
                 payload = data[2:-10]
+                root = ET.fromstring(payload)
+                for device in root.iter('Device'):
+                    #print (device, device.attrib)
+                    if 'Type' in device.attrib and device.attrib['Type'] == 'Beacon':
+                        if 'UID' in device.attrib and 'Name' in device.attrib:
+                            self.beacon_uids[device.attrib['Name']] = device.attrib['UID']
+
                 return payload
                 #root = ET.fromstring(payload)
                 #return root

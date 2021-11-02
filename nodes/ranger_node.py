@@ -42,7 +42,40 @@ def processRemoteControl(data):
                         if not name in position_pubs:
                             position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
                         position_pubs[name].publish(geoPoint)
- 
+    for ds in root.iter('DeviceStatus'):
+        device = None
+        for item in ds:
+            if item.tag == 'Device':
+                if 'ActionType' in  item.attrib and item.attrib['ActionType'] == 'LINK STATUS' and 'Name' in item.attrib:
+                    device = item.attrib['Name']
+                else:
+                    device = None
+            if device is not None and item.tag == 'Properties':
+                print (device, item.attrib)
+
+
+
+def processPAN(data):
+    parts = data.strip().split('|',1)
+    data = parts[0]
+
+    if '[' in data:
+        data,diag = data.strip().split('[',1)
+
+    if len(parts) == 2:
+        msg = parts[1]
+
+        data_parts = data.split(',')
+        for p in data_parts:
+            if p.startswith('SMS:'):
+                address = p.split(':')[1]
+                sms = SMS()
+                sms.address = address
+                sms.message = msg
+                received_sms_pub.publish(sms)
+
+
+
 def timerCallback(event):
     data = rc.getData()
     if data is not None:
@@ -53,9 +86,14 @@ def timerCallback(event):
     if data is not None:
         #print('from pan:', data)
         raw_pan_pub.publish(String(data.decode('utf8')))
+        processPAN(data.decode('utf8'))
+
+
+def statusCallback(event):
+    rc.getAllLinkStatus()
 
 def sendSMSCallback(msg):
-    msg_str = "SMS:"+msg.address+"|"+msg.message+"\n"
+    msg_str = "<SMS:"+msg.address+"|"+msg.message+"\n"
     pan.send(msg_str.encode('utf8'))
 
 if __name__ == '__main__':
@@ -82,4 +120,6 @@ if __name__ == '__main__':
     send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
+    #status_timer = rospy.Timer(rospy.Duration(5), statusCallback)
+
     rospy.spin()
