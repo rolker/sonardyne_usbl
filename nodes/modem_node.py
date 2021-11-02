@@ -40,8 +40,8 @@ if __name__ == '__main__':
         c = sonardyne_usbl.modem.SerialConnection(host, port)
         modem = sonardyne_usbl.modem.Modem(c)
 
-    message_pub = rospy.Publisher('messages', SMS, queue_size=10)
-    raw_pub = rospy.Publisher('raw', String, queue_size=10)
+    message_pub = rospy.Publisher('~received_sms', SMS, queue_size=10)
+    raw_pub = rospy.Publisher('~raw', String, queue_size=10)
 
     send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
 
