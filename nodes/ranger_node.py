@@ -3,20 +3,22 @@
 import rospy
 
 from std_msgs.msg import String
+from std_msgs.msg import Bool
 from geographic_msgs.msg import GeoPointStamped
 from sonardyne_msgs.msg import SMS
+from sonardyne_msgs.msg import Position
+from sonardyne_msgs.msg import DeviceStatus
+from sonardyne_msgs.msg import DeviceEnable
 
 import xml.etree.ElementTree as ET
 import datetime
 
 import sonardyne_usbl.ranger2
 
-
 position_pubs = {}
 
-
-
 def processRemoteControl(data):
+    now = rospy.Time.now()
     root = ET.fromstring(data)
     for element in root:
         if element.tag == 'AsynchStatus':
@@ -42,6 +44,31 @@ def processRemoteControl(data):
                         if not name in position_pubs:
                             position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
                         position_pubs[name].publish(geoPoint)
+    for gp in root.iter('GeographicPositions'):
+        for p in gp.iter('Position'):
+            position_msg = Position()
+            position_msg.header.stamp = now
+            position_msg.UID = p.attrib['UID']
+            position_msg.age = float(p.attrib['Age'])
+            position_msg.category = p.attrib['Category']
+            position_msg.name = p.attrib['Name']
+            position_msg.latitude = float(p.attrib['Latitude'])
+            position_msg.longitude = float(p.attrib['Longitude'])
+            position_msg.depth = float(p.attrib['Depth'])
+            position_msg.history = p.attrib['History']
+            geographic_positions_pub.publish(position_msg)
+    for ds in root.iter('DeviceStatus'):
+        for d in ds.iter('Device'):
+            try:
+                status = DeviceStatus()
+                status.header.stamp = now
+                status.UID = d.attrib['UID']
+                status.name = d.attrib['Name']
+                status.type = d.attrib['Type']
+                status.state = int(d.attrib['State'])
+                device_status_pub.publish(status)
+            except KeyError:
+                pass
     for ds in root.iter('DeviceStatus'):
         device = None
         for item in ds:
@@ -96,6 +123,19 @@ def sendSMSCallback(msg):
     msg_str = "<SMS:"+msg.address+"|"+msg.message+"\n"
     pan.send(msg_str.encode('utf8'))
 
+def sendRawPANCallback(msg):
+    msg_str = msg.data+'\n'
+    print ('sending:', msg_str)
+    pan.send(msg_str.encode('utf8'))
+
+
+def enableRemoteCallback(msg):
+    rc.enableRemote(msg.data)
+
+def enableTrackingCallback(msg):
+    rc.enableTracking(msg.UID, msg.enable)
+
+
 if __name__ == '__main__':
     rospy.init_node('sonardyne_ranger')
   
@@ -116,8 +156,14 @@ if __name__ == '__main__':
     raw_pan_pub = rospy.Publisher('~raw_pan', String, queue_size=10)
 
     received_sms_pub = rospy.Publisher('~received_sms', SMS, queue_size=10)
+    geographic_positions_pub = rospy.Publisher('~geographic_positions', Position, queue_size=50)
+    device_status_pub = rospy.Publisher('~device_status', DeviceStatus, queue_size=50)
 
     send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
+    enable_remote_sub = rospy.Subscriber('~enable_remote', Bool, enableRemoteCallback, queue_size=1)
+    enable_tracking_sub = rospy.Subscriber('~enable_tracking', DeviceEnable, enableTrackingCallback, queue_size=1)
+    send_raw_pan_sub = rospy.Subscriber('~send_raw_pan', String, sendRawPANCallback, queue_size=10)
+
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
     #status_timer = rospy.Timer(rospy.Duration(5), statusCallback)

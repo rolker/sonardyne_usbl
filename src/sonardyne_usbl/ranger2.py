@@ -52,11 +52,19 @@ class RemoteConnection:
         else:
             self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job RemoteControlEnabled="false"/></Set></RemoteControl>')
 
+    def enableTracking(self, uid, enable=True):
+        if enable:
+            cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Beacon" UID="'+uid+'"><Properties State="Tracked"/></Object></Objects></Job></Set></RemoteControl>'
+        else:
+            cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Beacon" UID="'+uid+'"><Properties State="NotTracked"/></Object></Objects></Job></Set></RemoteControl>'
+        self.send(cmd.encode('utf8'))
+
+
     def enableAsync(self, enable=True):
         if enable:
-            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="True" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="True" AsyncAlarmOutputEnabled="True" AsyncEventOutputEnabled="False" AsyncOutputInterval="5"></Job></Set></RemoteControl>')
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="True" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="True" AsyncAlarmOutputEnabled="True" AsyncEventOutputEnabled="False" AsyncOutputInterval="2"></Job></Set></RemoteControl>')
         else:
-            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="False" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="False" AsyncAlarmOutputEnabled="False" AsyncEventOutputEnabled="False" AsyncOutputInterval="5"></Job></Set></RemoteControl>')
+            self.send(b'<RemoteControl ProtocolVersion="1.5"><Set><Job AsyncGeographicPositionOutputEnabled="False" AsyncGridPositionOutputEnabled="False" AsyncShipRelativePositionOutputEnabled="False" AsyncDeviceStatusOutputEnabled="False" AsyncAlarmOutputEnabled="False" AsyncEventOutputEnabled="False" AsyncOutputInterval="2"></Job></Set></RemoteControl>')
     def getData(self):
         try:
             data = self.in_socket.recv(4096)
