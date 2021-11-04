@@ -17,6 +17,8 @@ import sonardyne_usbl.ranger2
 
 position_pubs = {}
 
+last_sent_position_times = {}
+
 def processRemoteControl(data):
     now = rospy.Time.now()
     root = ET.fromstring(data)
@@ -29,21 +31,25 @@ def processRemoteControl(data):
                         geoPoint.position.altitude = -float(gp.attrib['Depth'])
                         geoPoint.position.latitude = float(gp.attrib['Latitude'])
                         geoPoint.position.longitude = float(gp.attrib['Longitude'])
+                        uid = gp.attrib['UID']
                         name = gp.attrib['Name']
                         validTime = gp.attrib['TimeOfValidity']
-                        timeParts = validTime.split(':')
-                        secs = float(timeParts[2])
-                        secs_int = int(secs)
-                        usec = int((secs-secs_int)*1000000)
-                        ts = rospy.Time.now()
-                        dt = datetime.datetime.utcfromtimestamp(ts.to_sec())
-                        dt = datetime.datetime(dt.year, dt.month, dt.day, int(timeParts[0]), int(timeParts[1]), secs_int, usec)
+                        if not uid in last_sent_position_times or last_sent_position_times[uid] != validTime:
+                            timeParts = validTime.split(':')
+                            secs = float(timeParts[2])
+                            secs_int = int(secs)
+                            usec = int((secs-secs_int)*1000000)
+                            ts = rospy.Time.now()
+                            dt = datetime.datetime.utcfromtimestamp(ts.to_sec())
+                            dt = datetime.datetime(dt.year, dt.month, dt.day, int(timeParts[0]), int(timeParts[1]), secs_int, usec)
 
-                        geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
-                        
-                        if not name in position_pubs:
-                            position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
-                        position_pubs[name].publish(geoPoint)
+                            geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
+                            
+                            if not name in position_pubs:
+                                position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
+                            position_pubs[name].publish(geoPoint)
+                            last_sent_position_times[uid] = validTime
+
     for gp in root.iter('GeographicPositions'):
         for p in gp.iter('Position'):
             position_msg = Position()
