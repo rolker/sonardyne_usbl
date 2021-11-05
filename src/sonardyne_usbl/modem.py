@@ -73,6 +73,8 @@ class Modem:
     if raw is None:
       return None
 
+    print('raw:',raw)
+
     ret = {}
 
     parts = raw.strip().split('|',1)

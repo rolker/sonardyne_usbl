@@ -25,6 +25,9 @@ def timerCallback(event):
 def sendSMSCallback(msg):
     modem.sendSMS(msg.address, msg.message)
 
+def sendRawCallback(msg):
+    modem.send(msg.data+'\n')
+
 if __name__ == '__main__':
     rospy.init_node('sonardyne_modem')
   
@@ -44,6 +47,7 @@ if __name__ == '__main__':
     raw_pub = rospy.Publisher('~raw', String, queue_size=10)
 
     send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
+    send_raw_sub = rospy.Subscriber('~send_raw', String, sendRawCallback, queue_size=10)
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
     rospy.spin()
