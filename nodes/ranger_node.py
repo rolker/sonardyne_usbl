@@ -5,10 +5,10 @@ import rospy
 from std_msgs.msg import String
 from std_msgs.msg import Bool
 from geographic_msgs.msg import GeoPointStamped
-from sonardyne_msgs.msg import SMS
 from sonardyne_msgs.msg import Position
 from sonardyne_msgs.msg import DeviceStatus
 from sonardyne_msgs.msg import DeviceEnable
+from sonardyne_msgs.msg import DeviceValue
 
 import xml.etree.ElementTree as ET
 import datetime
@@ -86,54 +86,15 @@ def processRemoteControl(data):
             if device is not None and item.tag == 'Properties':
                 print (device, item.attrib)
 
-
-
-def processPAN(data):
-    parts = data.strip().split('|',1)
-    data = parts[0]
-
-    if '[' in data:
-        data,diag = data.strip().split('[',1)
-
-    if len(parts) == 2:
-        msg = parts[1]
-
-        data_parts = data.split(',')
-        for p in data_parts:
-            if p.startswith('SMS:'):
-                address = p.split(':')[1]
-                sms = SMS()
-                sms.address = address
-                sms.message = msg
-                received_sms_pub.publish(sms)
-
-
-
 def timerCallback(event):
     data = rc.getData()
     if data is not None:
         #print(data)
         raw_control_pub.publish(String(data.decode('utf8')))
         processRemoteControl(data)
-    data = pan.getData()
-    if data is not None:
-        #print('from pan:', data)
-        raw_pan_pub.publish(String(data.decode('utf8')))
-        processPAN(data.decode('utf8'))
-
 
 def statusCallback(event):
     rc.getAllLinkStatus()
-
-def sendSMSCallback(msg):
-    msg_str = "<SMS:"+msg.address+"|"+msg.message+"\n"
-    pan.send(msg_str.encode('utf8'))
-
-def sendRawPANCallback(msg):
-    msg_str = msg.data+'\n'
-    print ('sending:', msg_str)
-    pan.send(msg_str.encode('utf8'))
-
 
 def enableRemoteCallback(msg):
     rc.enableRemote(msg.data)
@@ -141,6 +102,8 @@ def enableRemoteCallback(msg):
 def enableTrackingCallback(msg):
     rc.enableTracking(msg.UID, msg.enable)
 
+def setTransceiverGainCallback(msg):
+    rc.setTransceiverGain(msg.UID, msg.value)
 
 if __name__ == '__main__':
     rospy.init_node('sonardyne_ranger')
@@ -148,30 +111,22 @@ if __name__ == '__main__':
     host = rospy.get_param('~host')
     control_port_in = rospy.get_param('~control_port_in', 50001)
     control_port_out = rospy.get_param('~control_port_out', 50000)
-    pan_port_in = rospy.get_param('~pan_port_in', 50011)
-    pan_port_out = rospy.get_param('~pan_port_out', 50010)
-
+ 
     rc = sonardyne_usbl.ranger2.RemoteConnection(control_port_in, control_port_out, host)
-    pan = sonardyne_usbl.ranger2.ProgrammableAcousticNavigation(pan_port_in, pan_port_out, host)
 
     rc.getStatus()
     rc.enableRemote()
     rc.enableAsync(True)
 
     raw_control_pub = rospy.Publisher('~raw_control', String, queue_size=10)
-    raw_pan_pub = rospy.Publisher('~raw_pan', String, queue_size=10)
 
-    received_sms_pub = rospy.Publisher('~received_sms', SMS, queue_size=10)
     geographic_positions_pub = rospy.Publisher('~geographic_positions', Position, queue_size=50)
     device_status_pub = rospy.Publisher('~device_status', DeviceStatus, queue_size=50)
 
-    send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)
     enable_remote_sub = rospy.Subscriber('~enable_remote', Bool, enableRemoteCallback, queue_size=1)
     enable_tracking_sub = rospy.Subscriber('~enable_tracking', DeviceEnable, enableTrackingCallback, queue_size=1)
-    send_raw_pan_sub = rospy.Subscriber('~send_raw_pan', String, sendRawPANCallback, queue_size=10)
-
+    enable_set_gain_sub = rospy.Subscriber('~set_transceiver_gain', DeviceValue, setTransceiverGainCallback, queue_size=1)
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
-    #status_timer = rospy.Timer(rospy.Duration(5), statusCallback)
 
     rospy.spin()
