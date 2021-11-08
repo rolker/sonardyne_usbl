@@ -22,7 +22,7 @@ For a `udp` connection, the host, input port, and output port are specified by `
 
 ## ranger_node
 
-The `ranger_node.py` node subscribes to asynchronous position updates from the Ranger software and publishes them as `geographic_msgs/GeoPointStamped` messages. Devices that are tracked have their positions published to a topic under `~positions/` consiting of the device name.
+The `ranger_node.py` node subscribes to asynchronous position updates from the Ranger software and publishes them as `geographic_msgs/GeoPointStamped` messages. Devices that are tracked have their positions published to topics under `~positions/` consiting of the device names.
 
 The node also publishes position data as received as `sonardyne_msgs/Position` messages on the `~geographic_positions` topic as well as device status updates as `sonardyne_msgs/DeviceStatus` messages on the `~device_status` topic.
 
