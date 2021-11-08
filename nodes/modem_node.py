@@ -21,7 +21,7 @@ def timerCallback(event):
     if data is not None:
         print (data)
         raw_pub.publish(String(data['raw']))
-        if data['response_type'] == 'SMS' and 'message' in data:
+        if 'response_type' in data and data['response_type'] == 'SMS' and 'message' in data:
             sms = SMS()
             sms.address = data['address']
             sms.message = data['message']
