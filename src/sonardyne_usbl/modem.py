@@ -20,7 +20,7 @@ class TCPConnection:
         self.sock.send(data.encode('utf-8'))
 
     def recv(self):
-        return self.sock.recv(4096).decode('utf-8')
+        return self.sock.recv(10000).decode('utf-8')
 
 class UDPConnection:
     def __init__(self, inport, outport, remote_host, local_address=''):
@@ -42,7 +42,7 @@ class UDPConnection:
 
     def recv(self):
         try:
-            return self.in_socket.recv(4096).decode('utf-8')
+            return self.in_socket.recv(10000).decode('utf-8')
         except socket.timeout:
             pass
         return None
@@ -79,7 +79,8 @@ class Modem:
         return self.connection.recv()
 
     def enableDiagnostics(self):
-        self.send('DIAG:XC,DBV,SNR,FEC,TEL,DOP,RX1,IFL\n')
+        #self.send('DIAG:XC,DBV,SNR,FEC,TEL,DOP,RX1,IFL\n')
+        self.send('DIAG:XC,DBV,SNR,IFL\n')
 
     def disableDiagnostics(self):
         self.send('DIAG:NONE\n')
