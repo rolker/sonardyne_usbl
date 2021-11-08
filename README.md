@@ -10,7 +10,7 @@ Raw data coming from the modem is published as `std_msgs/String` messages on the
 
 Raw commands can be sent to the modem by publishing `std_msgs/String` messages to `~send_raw` while SMS messages can be sent as `sonardyne_msgs/SMS` messages to `~send_sms`.
 
-### Parameters
+### Modem Parameters
 
 The connection type is specified with the `~connection/type` parameter with expected values of `serial`, `tcp` or `udp`.
 
@@ -30,7 +30,7 @@ Active tracking of devices can be enabled or disabled by sending a `sonardune_ms
 
 For monitoring and troubleshooting, the raw XML data received from the Ranger software is published on the `~raw_control` topic.
 
-### Parameters
+### Ranger Parameters
 
 The following parameters specify the connection infromation.
 
