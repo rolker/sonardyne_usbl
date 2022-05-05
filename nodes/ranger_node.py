@@ -26,6 +26,7 @@ def processRemoteControl(data):
         if element.tag == 'AsynchStatus':
             for sube in element:
                 if sube.tag == 'GeographicPositions':
+                    #print (data)
                     for gp in sube:
                         geoPoint = GeoPointStamped()
                         geoPoint.position.altitude = -float(gp.attrib['Depth'])
@@ -46,6 +47,7 @@ def processRemoteControl(data):
                             geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
                             
                             if not name in position_pubs:
+                                #print('creating position publisher for', name)
                                 position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
                             position_pubs[name].publish(geoPoint)
                             last_sent_position_times[uid] = validTime

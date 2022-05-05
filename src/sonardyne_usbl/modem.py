@@ -117,8 +117,17 @@ class Modem:
         response_type = None
 
         for part in data.strip().split(','):
-            if part.startswith('>'):
-                response_type = part.split(':',1)[0][1:]
+            if response_type is None:
+                if part.startswith('>'):
+                    if len(part) == 8 and part[1] == 'U':
+                        pass
+                    else:
+                        response_type = part.split(':',1)[0][1:]
+                else:
+                    if len(part) == 7 and part[0] == 'U':
+                        pass
+                    else:
+                        response_type = part.split(':',1)[0]
                 if response_type == 'FS':
                     ret['response_type'] = 'fixed_status'
                 elif response_type == 'CS':

@@ -72,9 +72,11 @@ class RemoteConnection:
         
     def getData(self):
         try:
-            data = self.in_socket.recv(4096)
+            data = self.in_socket.recv(8192)
             if len(data) > 12:
                 payload = data[2:-10]
+                #print ('payload size:', len(payload))
+                #print('payload:', payload)
                 root = ET.fromstring(payload)
                 for device in root.iter('Device'):
                     #print (device, device.attrib)
