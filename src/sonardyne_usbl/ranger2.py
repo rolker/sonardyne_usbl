@@ -44,7 +44,12 @@ class RemoteConnection:
         for name in self.beacon_uids:
             self.getLinkStatus(name)
 
-
+    def enableTransceiver(self, uid, enable=True):
+        if enable:
+            cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Transceiver" UID="'+uid+'"><Properties TxRxMode="TxRx"/></Object></Objects></Job></Set></RemoteControl>'
+        else:
+            cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Transceiver" UID="'+uid+'"><Properties TxRxMode="Disabled"/></Object></Objects></Job></Set></RemoteControl>'
+        self.send(cmd.encode('utf8'))
 
     def enableRemote(self, enable=True):
         if enable:
