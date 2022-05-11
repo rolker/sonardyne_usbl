@@ -102,7 +102,9 @@ def enableRemoteCallback(msg):
     rc.enableRemote(msg.data)
 
 def enableTransceiverCallback(msg):
+    rc.enableRemote(True)
     rc.enableTransceiver(msg.UID, msg.enable)
+    rc.enableRemote(False)
 
 def enableTrackingCallback(msg):
     rc.enableRemote(True)
