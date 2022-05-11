@@ -102,10 +102,14 @@ def enableRemoteCallback(msg):
     rc.enableRemote(msg.data)
 
 def enableTrackingCallback(msg):
+    rc.enableRemote(True)
     rc.enableTracking(msg.UID, msg.enable)
+    rc.enableRemote(False)
 
 def setTransceiverGainCallback(msg):
+    rc.enableRemote(True)
     rc.setTransceiverGain(msg.UID, msg.value)
+    rc.enableRemote(False)
 
 if __name__ == '__main__':
     rospy.init_node('sonardyne_ranger')
@@ -119,6 +123,7 @@ if __name__ == '__main__':
     rc.getStatus()
     rc.enableRemote()
     rc.enableAsync(True)
+    rc.enableRemote(False)
 
     raw_control_pub = rospy.Publisher('~raw_control', String, queue_size=10)
 
