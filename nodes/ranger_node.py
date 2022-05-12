@@ -35,6 +35,7 @@ def processRemoteControl(data):
                         uid = gp.attrib['UID']
                         name = gp.attrib['Name']
                         validTime = gp.attrib['TimeOfValidity']
+                        history = gp.attrib['History']
                         if not uid in last_sent_position_times or last_sent_position_times[uid] != validTime:
                             timeParts = validTime.split(':')
                             secs = float(timeParts[2])
@@ -49,8 +50,11 @@ def processRemoteControl(data):
                             if not name in position_pubs:
                                 #print('creating position publisher for', name)
                                 position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
-                            position_pubs[name].publish(geoPoint)
-                            last_sent_position_times[uid] = validTime
+                            if len(history) and history[-1] == '1':
+                                position_pubs[name].publish(geoPoint)
+                                last_sent_position_times[uid] = validTime
+                            # else:
+                            #     print ('not sending pos to', name, " with history", history)
 
     for gp in root.iter('GeographicPositions'):
         for p in gp.iter('Position'):
