@@ -23,6 +23,7 @@ def timerCallback(event):
         raw_pub.publish(String(data['raw']))
         if 'response_type' in data and data['response_type'] == 'SMS' and 'message' in data:
             sms = SMS()
+            sms.receive_time = rospy.Time.now()
             sms.address = data['address']
             sms.message = data['message']
             message_pub.publish(sms)
