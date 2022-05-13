@@ -115,17 +115,18 @@ class Modem:
 
 
         response_type = None
+        UID = None
 
         for part in data.strip().split(','):
             if response_type is None:
                 if part.startswith('>'):
                     if len(part) == 8 and part[1] == 'U':
-                        pass
+                        UID = part[1:]
                     else:
                         response_type = part.split(':',1)[0][1:]
                 else:
                     if len(part) == 7 and part[0] == 'U':
-                        pass
+                        UID = part
                     else:
                         response_type = part.split(':',1)[0]
                 if response_type == 'FS':
@@ -240,6 +241,9 @@ class Modem:
 
         if diag is not None:
             ret['diag'] = self.parseDiag(diag[:-1])
+
+        if UID is not None:
+            ret['UID'] = UID
 
         ret['raw'] = raw
 
