@@ -28,47 +28,55 @@ def processRemoteControl(data):
                 if sube.tag == 'GeographicPositions':
                     #print (data)
                     for gp in sube:
-                        geoPoint = GeoPointStamped()
-                        geoPoint.position.altitude = -float(gp.attrib['Depth'])
-                        geoPoint.position.latitude = float(gp.attrib['Latitude'])
-                        geoPoint.position.longitude = float(gp.attrib['Longitude'])
-                        uid = gp.attrib['UID']
-                        name = gp.attrib['Name']
-                        validTime = gp.attrib['TimeOfValidity']
-                        history = gp.attrib['History']
-                        if not uid in last_sent_position_times or last_sent_position_times[uid] != validTime:
-                            timeParts = validTime.split(':')
-                            secs = float(timeParts[2])
-                            secs_int = int(secs)
-                            usec = int((secs-secs_int)*1000000)
-                            ts = rospy.Time.now()
-                            dt = datetime.datetime.utcfromtimestamp(ts.to_sec())
-                            dt = datetime.datetime(dt.year, dt.month, dt.day, int(timeParts[0]), int(timeParts[1]), secs_int, usec)
+                        try:
+                            geoPoint = GeoPointStamped()
+                            geoPoint.position.altitude = -float(gp.attrib['Depth'])
+                            geoPoint.position.latitude = float(gp.attrib['Latitude'])
+                            geoPoint.position.longitude = float(gp.attrib['Longitude'])
+                            uid = gp.attrib['UID']
+                            name = gp.attrib['Name']
+                            validTime = gp.attrib['TimeOfValidity']
+                            history = gp.attrib['History']
+                            if not uid in last_sent_position_times or last_sent_position_times[uid] != validTime:
+                                timeParts = validTime.split(':')
+                                secs = float(timeParts[2])
+                                secs_int = int(secs)
+                                usec = int((secs-secs_int)*1000000)
+                                ts = rospy.Time.now()
+                                dt = datetime.datetime.utcfromtimestamp(ts.to_sec())
+                                dt = datetime.datetime(dt.year, dt.month, dt.day, int(timeParts[0]), int(timeParts[1]), secs_int, usec)
 
-                            geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
-                            
-                            if not name in position_pubs:
-                                #print('creating position publisher for', name)
-                                position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
-                            if len(history) and history[-1] == '1':
-                                position_pubs[name].publish(geoPoint)
-                                last_sent_position_times[uid] = validTime
-                            # else:
-                            #     print ('not sending pos to', name, " with history", history)
+                                geoPoint.header.stamp = rospy.Time.from_sec(dt.timestamp())
+                                
+                                name = name.replace(' ','_')
+
+                                if not name in position_pubs:
+                                    #print('creating position publisher for', name)
+                                    position_pubs[name] = rospy.Publisher("~positions/"+name, GeoPointStamped, queue_size=1)
+                                if len(history) and history[-1] == '1':
+                                    position_pubs[name].publish(geoPoint)
+                                    last_sent_position_times[uid] = validTime
+                                # else:
+                                #     print ('not sending pos to', name, " with history", history)
+                        except KeyError:
+                            pass
 
     for gp in root.iter('GeographicPositions'):
         for p in gp.iter('Position'):
-            position_msg = Position()
-            position_msg.header.stamp = now
-            position_msg.UID = p.attrib['UID']
-            position_msg.age = float(p.attrib['Age'])
-            position_msg.category = p.attrib['Category']
-            position_msg.name = p.attrib['Name']
-            position_msg.latitude = float(p.attrib['Latitude'])
-            position_msg.longitude = float(p.attrib['Longitude'])
-            position_msg.depth = float(p.attrib['Depth'])
-            position_msg.history = p.attrib['History']
-            geographic_positions_pub.publish(position_msg)
+            try:
+                position_msg = Position()
+                position_msg.header.stamp = now
+                position_msg.UID = p.attrib['UID']
+                position_msg.age = float(p.attrib['Age'])
+                position_msg.category = p.attrib['Category']
+                position_msg.name = p.attrib['Name']
+                position_msg.latitude = float(p.attrib['Latitude'])
+                position_msg.longitude = float(p.attrib['Longitude'])
+                position_msg.depth = float(p.attrib['Depth'])
+                position_msg.history = p.attrib['History']
+                geographic_positions_pub.publish(position_msg)
+            except KeyError:
+                pass
     for ds in root.iter('DeviceStatus'):
         for d in ds.iter('Device'):
             try:
