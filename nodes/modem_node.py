@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from urllib import response
 import rospy
 
 from std_msgs.msg import String
@@ -35,7 +36,7 @@ def timerCallback(event):
                 sms_reply.response = data['response']
                 if 'time_of_flight' in data:
                     sms_reply.time_of_flight = data['time_of_flight']
-                resp
+                sms_response_pub.publish(sms_reply)
                 
         if 'diag' in data:
             diag_array = DiagnosticArray()
