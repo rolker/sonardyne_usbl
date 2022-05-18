@@ -74,6 +74,14 @@ class RemoteConnection:
     def setTransceiverGain(self, uid, value):
         cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Beacon" UID="'+uid+'"><Properties TransceiverGain="'+value+'" /></Object></Objects></Job></Set></RemoteControl>'
         self.send(cmd.encode('utf8'))
+
+    def setManualDepth(self, uid, depth=None):
+        if depth is not None:
+           cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Beacon" UID="'+uid+'"><Properties ManualDepthEnabled=”True” ManualDepth=”'+str(depth)+'”/></Object></Objects></Job></Set></RemoteControl>'
+        else:
+           cmd = '<RemoteControl ProtocolVersion="1.5"><Set><Job><Objects><Object Type="Beacon" UID="'+uid+'"><Properties ManualDepthEnabled=”False”/></Object></Objects></Job></Set></RemoteControl>'
+        self.send(cmd.encode('utf8'))
+
         
     def getData(self):
         try:
