@@ -276,7 +276,7 @@ class Modem:
         self.connection.send('MDFT:'+address+'|'+data+'\n')
 
     def sendSMS(self, address, data):
-        self.connection.send('SMS:'+address+',R1|'+data+'\n')
+        self.connection.send('SMS:'+address+';TS2;RTS2,R1|'+data+'\n')
 
     def modemStatus(self):
         self.getStatus('MS')
