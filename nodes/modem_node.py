@@ -3,16 +3,16 @@
 import rospy
 
 from std_msgs.msg import String
-from sonardyne_msgs.msg import SMS
+from sonardyne_msgs.msg import SMS, SMSResponse
 
 from diagnostic_msgs.msg import DiagnosticArray
 from diagnostic_msgs.msg import DiagnosticStatus
 from diagnostic_msgs.msg import KeyValue
 
-
 import sonardyne_usbl.modem
 
 message_pub = None
+sms_response_pub = None
 raw_pub = None
 modem = None
 
@@ -21,12 +21,22 @@ def timerCallback(event):
     if data is not None:
         print (data)
         raw_pub.publish(String(data['raw']))
-        if 'response_type' in data and data['response_type'] == 'SMS' and 'message' in data:
-            sms = SMS()
-            sms.receive_time = rospy.Time.now()
-            sms.address = data['address']
-            sms.message = data['message']
-            message_pub.publish(sms)
+        if 'response_type' in data and data['response_type'] == 'SMS':
+            if 'message' in data:
+                sms = SMS()
+                sms.receive_time = rospy.Time.now()
+                sms.address = data['address']
+                sms.message = data['message']
+                message_pub.publish(sms)
+            elif 'response' in data:
+                sms_reply = SMSResponse()
+                sms_reply.receive_time = rospy.Time.now()
+                sms_reply.address = data['address']
+                sms_reply.response = data['response']
+                if 'time_of_flight' in data:
+                    sms_reply.time_of_flight = data['time_of_flight']
+                resp
+                
         if 'diag' in data:
             diag_array = DiagnosticArray()
             diag_array.header.stamp = rospy.Time.now()
@@ -68,6 +78,7 @@ if __name__ == '__main__':
     modem.enableDiagnostics()
 
     message_pub = rospy.Publisher('~received_sms', SMS, queue_size=10)
+    sms_response_pub = rospy.Publisher('~sms_response', SMSResponse, queue_size=10)
     raw_pub = rospy.Publisher('~raw', String, queue_size=10)
 
     send_sms_sub = rospy.Subscriber('~send_sms', SMS, sendSMSCallback, queue_size=10)

@@ -238,6 +238,19 @@ class Modem:
                         ret['batteries'] = []
                     ret['batteries'].append(battery)
 
+            if response_type == 'SMS':
+                if part[0] == 'R':
+                    try:
+                        ret['time_of_flight'] = int(part[1:])/1000000.0
+                        ret['response'] = 'ack'
+                    except ValueError:
+                        print("error parsing R:", part)
+                if part == 'NO_REPLY':
+                    ret['response'] = 'no_reply'
+                if part == 'ACK':
+                    ret['response'] = 'ack'
+                
+
 
         if diag is not None:
             ret['diag'] = self.parseDiag(diag[:-1])
@@ -276,7 +289,7 @@ class Modem:
         self.connection.send('MDFT:'+address+'|'+data+'\n')
 
     def sendSMS(self, address, data):
-        self.connection.send('SMS:'+address+';TS2;RTS2,R1|'+data+'\n')
+        self.connection.send('SMS:'+address+';TS2;RTS2,C0,A0,R1|'+data+'\n')
 
     def modemStatus(self):
         self.getStatus('MS')
