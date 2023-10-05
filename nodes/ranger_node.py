@@ -113,6 +113,10 @@ def statusCallback(event):
 def enableRemoteCallback(msg):
     rc.enableRemote(msg.data)
 
+
+def enableAsyncCallback(msg):
+    rc.enableAsync(msg.data)
+
 def enableTransceiverCallback(msg):
     rc.enableRemote(True)
     rc.enableTransceiver(msg.UID, msg.enable)
@@ -151,6 +155,7 @@ if __name__ == '__main__':
     enable_tracking_sub = rospy.Subscriber('~enable_tracking', DeviceEnable, enableTrackingCallback, queue_size=1)
     enable_tranceiver_sub = rospy.Subscriber('~enable_tranceiver', DeviceEnable, enableTransceiverCallback, queue_size=1)
     enable_set_gain_sub = rospy.Subscriber('~set_transceiver_gain', DeviceValue, setTransceiverGainCallback, queue_size=1)
+    enable_async_sub = rospy.Subscriber('~enable_async', Bool, enableAsyncCallback, queue_size=1)
 
     timer = rospy.Timer(rospy.Duration(0.1), timerCallback)
 
