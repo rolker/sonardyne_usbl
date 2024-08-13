@@ -45,6 +45,8 @@ class UDPConnection:
             return self.in_socket.recv(10000).decode('utf-8')
         except socket.timeout:
             pass
+        except UnicodeDecodeError:
+            pass
         return None
 
 class SerialConnection:
